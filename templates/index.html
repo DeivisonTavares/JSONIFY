@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tarefas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .task-list {
+            padding: 20px;
+        }
+        .task-item {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .add-task {
+            padding: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Lista de Tarefas</h1>
+        </div>
+        <div class="task-list" id="taskList">
+            {% for task in tasks %}
+                <div class="task-item">
+                    <h3>{{ task.name }}</h3>
+                    <p>{{ task.description }}</p>
+                    <p><strong>Status:</strong> {{ task.status }}</p>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="add-task">
+            <input type="text" id="taskName" placeholder="Nome da tarefa">
+            <input type="text" id="taskDescription" placeholder="Descrição da tarefa">
+            <button onclick="addTask()">Adicionar Tarefa</button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function fetchTasks() {
+            $.get('/tasks', function(tasks) {
+                var taskList = $('#taskList');
+                taskList.empty();
+                tasks.forEach(function(task) {
+                    taskList.append(
+                        '<div class="task-item">' +
+                        '<h3>' + task.name + '</h3>' +
+                        '<p>' + task.description + '</p>' +
+                        '<p><strong>Status:</strong> ' + task.status + '</p>' +
+                        '<button onclick="toggleTaskStatus(' + task.id + ')">Marcar como ' + (task.status === 'pendente' ? 'Concluída' : 'Pendente') + '</button>' +
+                        '</div>'
+                    );
+                });
+            });
+        }
+
+        function addTask() {
+            var name = $('#taskName').val();
+            var description = $('#taskDescription').val();
+            
+            $.ajax({
+                url: '/tasks',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ name: name, description: description, status: 'pendente' }),
+                success: function(response) {
+                    console.log('Sucesso:', response);
+                    fetchTasks();
+                    $('#taskName').val('');
+                    $('#taskDescription').val('');
+                },
+                error: function(error) {
+                    console.error('Erro:', error);
+                }
+            });
+        }
+
+        function toggleTaskStatus(taskId) {
+            $.ajax({
+                url: '/tasks/' + taskId,
+                type: 'PUT',
+                success: function(response) {
+                    console.log('Tarefa atualizada:', response);
+                    fetchTasks();  // Atualiza a lista de tarefas
+                },
+                error: function(error) {
+                    console.error('Erro:', error);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            fetchTasks();
+        });
+    </script>
+</body>
+</html>
